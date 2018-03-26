@@ -1,6 +1,6 @@
-# CMake build tools for android and Qt
+# CMake build tool for Android and Qt
 
-_**Q**t**A**ndroidcma**KE**_ tool is a guide how to build android applications
+_**Q**t**A**ndroidcma**KE**_ tool is a guide how to build Android applications
 using Qt and CMake on Linux systems. It uses the toolchain file directly from
 the Android NDK.
 
@@ -14,37 +14,16 @@ Qt libraries.
 Before you start, you need to install some required tools.
 
 * Install openjdk
-* Download android sdk
-* Download android ndk
+* Download Android sdk
+* Download Android ndk
 
-Ensure you accept the android java sdk license.
+Ensure you accept the Android java sdk license.
 
 ```sh
 sdk/tools/bin/sdkmanager --license
 ```
 
-## A quick cross compilation
-
-To simply cross complie for android, it is enough to point out the toolchain
-file and define the Android Api level. For Qt applications we must also
-set `CMAKE_PREFIX_PATH` to indicate to CMake where to find the pre-built
-Qt libraries. Since the toolchain file appends the sysroot to all find paths,
-we must also set `CMAKE_FIND_ROOT_PATH_MODE_PACKAGE` to find Qt modules.
-
-```sh
-cmake -DCMAKE_TOOLCHAIN_FILE=<path>/android-ndk-r16b/build/cmake/android.toolchain.cmake -DCMAKE_PREFIX_PATH=<path>/qt/5.9/android_armv7/lib/cmake -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ON -DANDROID_NATIVE_API_LEVEL=android-19 ..
-```
-
-This will setup a build for armeabi-v7a using clang, but these can be changed by
-providing `-DANDROID_ABI=` and `-DANDROID_TOOLCHAIN=`
-
-Then start the build
-
-```sh
-cmake --build .
-```
-
-## Creating an apk package
+## Creating an Android package (apk)
 
 For this part, we rely on the `androiddeplyqt` tool provided by Qt.
 The usage of this tool is bundled in the `create_apk.cmake` file.
@@ -62,8 +41,8 @@ export QAKE_DIR=<path to qaketool>
 
 ### CMake setup
 
-The toolchain file sets the `ANDROID` variable. Use this for Android specific
-settings, e.g that the executable must be built as a shared library for the apk.
+The toolchain file from the ndk sets the `ANDROID` variable. Use this for Android specific
+settings, e.g. that the executable must be built as a shared library for the apk.
 
 ```cmake
 if (ANDROID)
@@ -75,7 +54,7 @@ endif()
 
 ### Configure the apk
 
-Include the `create_apk.cmake` file and use the `create_apk` macro to define the apk build.
+Include the `create_apk.cmake` file and use the `create_apk()` macro to define the apk build.
 
 ```cmake
 if(ANDROID)
@@ -94,9 +73,9 @@ endif()
 The first argument to `create_apk` is the name of the target for the application.
 A make target called `build_apk` will be generated but automatically built.
 
-#### create_apk() options
+#### Options
 
-__NAME__ - The name of the application, as shown on the android device. If not provided,
+__NAME__ - The name of the application, as shown on the Android device. If not provided,
 the name of the source target will be used.
 
 __PACKAGE_NAME__ - The name of the application package. If not provided, `io.qt.${PROJECT_NAME}` is used.
@@ -111,9 +90,25 @@ __VERSION_NAME__ - Displayed version of the application.
 
 __QML_PATH__ - Path to qml files to parse for required imports to include in the apk.
 
-## Build
+## Build the apk
 
-To ensure `make` from the ndk is used:
+To cross compile for Android, it is enough to point out the toolchain
+file and define the Android Api level. For Qt applications we must also
+set `CMAKE_PREFIX_PATH` to indicate to CMake where to find the pre-built
+Qt libraries. Since the toolchain file appends the sysroot to all find paths,
+we must also set `CMAKE_FIND_ROOT_PATH_MODE_PACKAGE` to find the Qt modules.
+
+```sh
+mkdir build
+cd build
+cmake -DCMAKE_TOOLCHAIN_FILE=<path>/android-ndk-r16b/build/cmake/android.toolchain.cmake -DCMAKE_PREFIX_PATH=<path>/qt/5.9/android_armv7/lib/cmake -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ON -DANDROID_NATIVE_API_LEVEL=android-19 ..
+```
+
+This will setup a build for armeabi-v7a using clang as compiler and gnustl_static STL. These
+can be changed by also providing `-DANDROID_ABI=`, `-DANDROID_TOOLCHAIN=` and
+`-DANDROID_STL=` if required.
+
+To ensure `make` from the ndk is used, build with cmake.
 
 ```sh
 cmake --build .
