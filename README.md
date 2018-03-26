@@ -1,8 +1,8 @@
 # CMake build tools for android and Qt
 
-This tool is a guide how to build android applications using Qt and CMake on
-Linux systems - _**Q**t**A**ndroidcma**KE**_. It uses the toolchain file
-directly from the Android NDK.
+_**Q**t**A**ndroidcma**KE**_ tool is a guide how to build android applications
+using Qt and CMake on Linux systems. It uses the toolchain file directly from
+the Android NDK.
 
 The guide is tested to work with NDK version 16b, which by default uses the
 clang 5.0 compiler with gnu stl. From NDK v17, the llvm stl will be used
@@ -86,12 +86,13 @@ if(ANDROID)
         BUILDTOOLS_REVISION "25.0.3"
         VERSION_CODE 1
         VERSION_NAME "1.1"
+        QML_PATH ${CMAKE_CURRENT_SOURCE_DIR}/qml
         )
 endif()
 ```
 
 The first argument to `create_apk` is the name of the target for the application.
-A make target called `build_apk` will be generated but will be automatically built.
+A make target called `build_apk` will be generated but automatically built.
 
 #### create_apk() options
 
@@ -107,6 +108,8 @@ __VERSION_CODE__ - Version code used by Google Play. Must be incremented when ne
 version is published. Set to 1 if omitted.
 
 __VERSION_NAME__ - Displayed version of the application.
+
+__QML_PATH__ - Path to qml files to parse for required imports to include in the apk.
 
 ## Build
 

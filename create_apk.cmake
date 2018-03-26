@@ -26,14 +26,27 @@ message(STATUS "Using Java: ${JAVA_HOME}")
 message(STATUS "Using Android SDK: ${ANDROID_SDK_ROOT}")
 message(STATUS "Using Android NDK: ${ANDROID_NDK_ROOT}")
 message(STATUS "Using Qt: ${QT_PATH}")
-message(STATUS "Using qaketool: ${CMAKE_CURRENT_LIST_DIR}")
+message(STATUS "Using qaketool: ${QAKE_DIR}")
 
+# create_apk() uses androiddeployqt to create an android apk with Qt
+#
+#   The first argument is the name of the target for the application to package.
+#   A make target called `build_apk` will be generated but automatically built.
+#
+# options:
+#   NAME - name of the application, as shown on the android device
+#   PACKAGE_NAME - name of the application package
+#   BUILDTOOLS_REVISION - revision of build tools in the Android SDK
+#   VERSION_CODE - version code used by Google Play when upgrading
+#   VERSION_NAME - displayed version of the application
+#   QML_PATH - path to qml files to parse for dependencies
+#
 macro(create_apk SOURCE_TARGET)
 
     # parse the macro arguments
-    set(PARSE_VALUES NAME PACKAGE_NAME BUILDTOOLS_REVISION VERSION_CODE VERSION_NAME)
+    set(PARSE_VALUES NAME PACKAGE_NAME BUILDTOOLS_REVISION VERSION_CODE
+            VERSION_NAME QML_PATH)
     cmake_parse_arguments(ARG "" "${PARSE_VALUES}" "" ${ARGN})
-#    cmake_parse_arguments(ARG "NAME;VERSION_CODE;PACKAGE_NAME;PACKAGE_SOURCES;KEYSTORE_PASSWORD;BUILDTOOLS_REVISION" "DEPENDS;KEYSTORE" ${ARGN})
 
     # application name
     if(ARG_NAME)
@@ -59,8 +72,11 @@ macro(create_apk SOURCE_TARGET)
     # version name
     set(QAKE_VERSION_NAME ${ARG_VERSION_NAME})
 
-    ## build tools revision
+    # build tools revision
     set(BUILDTOOLS_REVISION ${ARG_BUILDTOOLS_REVISION})
+
+    # path to qml files
+    set(QAKE_QML_PATH ${ARG_QML_PATH})
 
     set(PACKAGE_DIR "${CMAKE_CURRENT_BINARY_DIR}/package")
     set(TARGET_PATH $<TARGET_FILE:${SOURCE_TARGET}>)
