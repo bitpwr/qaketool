@@ -13,5 +13,6 @@
  "qml-root-path": "${QAKE_QML_PATH}",
  "android-package": "${QAKE_PACKAGE_NAME}",
  "android-app-name": "${QAKE_APP_NAME}",
- "android-package-source-directory": "${QT_ANDROID_APP_PACKAGE_SOURCE_ROOT}"
+ "android-package-source-directory": "${QAKE_PACKAGE_DIR}"
+ ${QAKE_DEPENDENCIES}
 }

@@ -39,14 +39,15 @@ message(STATUS "Using qaketool: ${QAKE_DIR}")
 #   BUILDTOOLS_REVISION - revision of build tools in the Android SDK
 #   VERSION_CODE - version code used by Google Play when upgrading
 #   VERSION_NAME - displayed version of the application
-#   QML_PATH - path to qml files to parse for dependencies
+#   QML_PATH - path to qml files to parse for dependencies to include in apk
+#   DEPENDENCIES - list of shared libraries to include in apk
 #
 macro(create_apk SOURCE_TARGET)
 
     # parse the macro arguments
     set(PARSE_VALUES NAME PACKAGE_NAME BUILDTOOLS_REVISION VERSION_CODE
             VERSION_NAME QML_PATH)
-    cmake_parse_arguments(ARG "" "${PARSE_VALUES}" "" ${ARGN})
+    cmake_parse_arguments(ARG "" "${PARSE_VALUES}" "DEPENDENCIES" ${ARGN})
 
     # application name
     if(ARG_NAME)
@@ -78,13 +79,26 @@ macro(create_apk SOURCE_TARGET)
     # path to qml files
     set(QAKE_QML_PATH ${ARG_QML_PATH})
 
-    set(PACKAGE_DIR "${CMAKE_CURRENT_BINARY_DIR}/package")
+    # library dependencies
+    if(ARG_DEPENDENCIES)
+        foreach(LIB ${ARG_DEPENDENCIES})
+            if(DEPENDS)
+                string(APPEND DEPENDS ",${LIB}")
+            else()
+                set(DEPENDS "${LIB}")
+            endif()
+        endforeach()
+        set(QAKE_DEPENDENCIES ",\"android-extra-libs\": \"${DEPENDS}\"")
+
+    endif()
+
+    set(QAKE_PACKAGE_DIR "${CMAKE_CURRENT_BINARY_DIR}/package")
     set(TARGET_PATH $<TARGET_FILE:${SOURCE_TARGET}>)
     set(DEPLOY_INPUT ${CMAKE_CURRENT_BINARY_DIR}/deployinput.json)
 
     # generate the manifest
     configure_file(${QAKE_DIR}/AndroidManifest.xml.in
-                   ${PACKAGE_DIR}/AndroidManifest.xml)
+                   ${QAKE_PACKAGE_DIR}/AndroidManifest.xml)
 
     # generate androiddeployqt input
     configure_file(${QAKE_DIR}/deployinput.json.in
@@ -93,6 +107,11 @@ macro(create_apk SOURCE_TARGET)
     # must substitute generator expression for target path
     file(GENERATE OUTPUT ${DEPLOY_INPUT}
          INPUT ${CMAKE_CURRENT_BINARY_DIR}/deployinput.tmp)
+
+    message(STATUS "Generate APK for \"${QAKE_APP_NAME}\", version ${QAKE_VERSION_NAME}")
+    if (DEPENDS)
+        message(STATUS "Adding external dependencies: ${DEPENDS}")
+    endif()
 
     add_custom_target(build_apk ALL DEPENDS ${SOURCE_TARGET}
         COMMAND ${CMAKE_COMMAND} -E remove_directory

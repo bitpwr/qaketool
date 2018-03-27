@@ -90,6 +90,8 @@ __VERSION_NAME__ - Displayed version of the application.
 
 __QML_PATH__ - Path to qml files to parse for required imports to include in the apk.
 
+__DEPENDENCIES__ - List of paths to shared libraries, built for Android, to include in the apk.
+
 ## Build the apk
 
 To cross compile for Android, it is enough to point out the toolchain
