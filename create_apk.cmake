@@ -41,12 +41,13 @@ message(STATUS "Using qaketool: ${QAKE_DIR}")
 #   VERSION_NAME - displayed version of the application
 #   QML_PATH - path to qml files to parse for dependencies to include in apk
 #   DEPENDENCIES - list of shared libraries to include in apk
+#   MANIFEST - path to AndroidManifest.xml file to use, CMake substitution applies
 #
 macro(create_apk SOURCE_TARGET)
 
     # parse the macro arguments
     set(PARSE_VALUES NAME PACKAGE_NAME BUILDTOOLS_REVISION VERSION_CODE
-            VERSION_NAME QML_PATH)
+            VERSION_NAME QML_PATH MANIFEST)
     cmake_parse_arguments(ARG "" "${PARSE_VALUES}" "DEPENDENCIES" ${ARGN})
 
     # application name
@@ -89,7 +90,12 @@ macro(create_apk SOURCE_TARGET)
             endif()
         endforeach()
         set(QAKE_DEPENDENCIES ",\"android-extra-libs\": \"${DEPENDS}\"")
+    endif()
 
+    if (ARG_MANIFEST)
+        set(QAKE_MANIFEST ${ARG_MANIFEST})
+    else()
+        set(QAKE_MANIFEST ${QAKE_DIR}/AndroidManifest.xml.in)
     endif()
 
     set(QAKE_PACKAGE_DIR "${CMAKE_CURRENT_BINARY_DIR}/package")
@@ -97,7 +103,7 @@ macro(create_apk SOURCE_TARGET)
     set(DEPLOY_INPUT ${CMAKE_CURRENT_BINARY_DIR}/deployinput.json)
 
     # generate the manifest
-    configure_file(${QAKE_DIR}/AndroidManifest.xml.in
+    configure_file(${QAKE_MANIFEST}
                    ${QAKE_PACKAGE_DIR}/AndroidManifest.xml)
 
     # generate androiddeployqt input

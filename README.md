@@ -92,6 +92,10 @@ __QML_PATH__ - Path to qml files to parse for required imports to include in the
 
 __DEPENDENCIES__ - List of paths to shared libraries, built for Android, to include in the apk.
 
+__MANIFEST__ - Optional path to a AndroidManifest.xml file to use. It could be
+based on the provided `AndroidManifest.xml.in` since the same CMake substitutions
+will be applied. If not set, the provided manifest is used.
+
 ## Build the apk
 
 To cross compile for Android, it is enough to point out the toolchain
