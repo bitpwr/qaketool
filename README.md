@@ -1,13 +1,9 @@
 # CMake build tool for Android and Qt
 
-_**Q**t**A**ndroidcma**KE**_ tool is a guide how to build Android applications
-using Qt and CMake on Linux systems. It uses the toolchain file directly from
-the Android NDK.
-
-The guide is tested to work with NDK version 16b, which by default uses the
-clang 5.0 compiler with gnu stl. From NDK v17, the llvm stl will be used
-by default and this might become problematic when combined with pre-built
-Qt libraries.
+_**Q**t**A**ndroidcma**KE**_ tool is a guide how to build CMake based Qt
+applications for Android on Linux systems. It uses the toolchain file in
+the Android NDK. The guide is tested to work with NDK version 16b,
+which by default uses the clang 5.0 compiler with gnu stl.
 
 ## Prerequisites
 
@@ -16,6 +12,7 @@ Before you start, you need to install some required tools.
 * Install openjdk
 * Download Android sdk
 * Download Android ndk
+* Qt with pre-built libraries for Android (armeabi)
 
 Ensure you accept the Android java sdk license.
 
@@ -41,7 +38,7 @@ export QAKE_DIR=<path to qaketool>
 
 ### CMake setup
 
-The toolchain file from the ndk sets the `ANDROID` variable. Use this for Android specific
+The toolchain file from the NDK sets the `ANDROID` variable. Use this for Android specific
 settings, e.g. that the executable must be built as a shared library for the apk.
 
 ```cmake
@@ -68,7 +65,7 @@ endif()
 ```
 
 The first argument to `create_apk` is the name of the target for the application.
-A make target called `build_apk` will be generated but automatically built.
+A make target called `apk` will be generated.
 
 #### Options
 
@@ -110,7 +107,7 @@ if(ANDROID)
 endif()
 ```
 
-## Build the apk
+## Build the shared library
 
 To cross compile for Android, it is enough to point out the toolchain
 file and define the Android Api level. For Qt applications we must also
@@ -118,20 +115,38 @@ set `CMAKE_PREFIX_PATH` to indicate to CMake where to find the pre-built
 Qt libraries. Since the toolchain file appends the sysroot to all find paths,
 we must also set `CMAKE_FIND_ROOT_PATH_MODE_PACKAGE` to find the Qt modules.
 
+In NDK v16 the toolchain file is setup to use clang as the default
+compiler and the gnu version of stl. The gnu stl in the NDK does not
+support all features in C++11 and if you need these, the best option is to
+build with llvm libc++ stl instead. But since Qt versions 5.9-5.10 use shared
+gnu stl, we need to statically link our library with libc++ by setting
+`ANDROID_STL=c++_static`. In future versions of the NDK, libc++ will be default
+and other ports of STL will be removed.
+
+Now run `CMake`.
+
 ```sh
 mkdir build
 cd build
-cmake -DCMAKE_TOOLCHAIN_FILE=<path>/android-ndk-r16b/build/cmake/android.toolchain.cmake -DCMAKE_PREFIX_PATH=<path>/qt/5.9/android_armv7/lib/cmake -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ON -DANDROID_NATIVE_API_LEVEL=android-19 ..
+cmake -DCMAKE_TOOLCHAIN_FILE=<path>/android-ndk-r16b/build/cmake/android.toolchain.cmake -DCMAKE_PREFIX_PATH=<path>/qt/5.9/android_armv7/lib/cmake -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ON -DANDROID_STL=c++_static -DANDROID_NATIVE_API_LEVEL=android-19 ..
 ```
 
-This will setup a build for armeabi-v7a using clang as compiler and gnustl_static STL. These
-can be changed by also providing `-DANDROID_ABI=`, `-DANDROID_TOOLCHAIN=` and
-`-DANDROID_STL=` if required.
+This will setup a Makefile for armeabi-v7a using clang as compiler and static libc++ STL.
+These can be changed by also providing `ANDROID_ABI`, `ANDROID_TOOLCHAIN` and
+`ANDROID_STL` if required.
 
-To ensure `make` from the ndk is used, build with cmake.
+Then build the library for Android.
 
 ```sh
-cmake --build .
+make
+```
+
+## Build the apk
+
+If everything is correctly setup, creating the apk is as simple as:
+
+```sh
+make apk
 ```
 
 ## Installation
@@ -144,13 +159,15 @@ To install the apk on a connected Android phone, just use `adb` from the Android
 
 ## Cross compile and include other libraries
 
-These are the steps to cross compile a shared library and include it in the apk.
-It is possible to complie it as described above but sometimes it is better to
-use the ndk to generate a dedicated [standalone toolchain](https://developer.android.com/ndk/guides/standalone_toolchain.html).
+It is possible to compile third party library as described above but sometimes
+it is better to use the NDK to generate a dedicated
+[standalone toolchain](https://developer.android.com/ndk/guides/standalone_toolchain.html).
 
 ### Create a standalone toolchain
 
-Select the Android api level and architecture and run `make_standalone_toolchain.py` from the ndk.
+_This will be obsolete from NDK v19, since only one compiler and stl will then be included in the NDK._
+
+Select the Android api level and architecture and run `make_standalone_toolchain.py` from the NDK.
 
 ```sh
 <path_to_ndk>/build/tools/make_standalone_toolchain.py --api 19 --arch arm --install-dir=<outpath>/standalone-toolchain
@@ -192,7 +209,7 @@ make
 
 ### Build CMake project
 
-*TBD*
+Use the toolchain as described above.
 
 ### Include the library in the apk
 

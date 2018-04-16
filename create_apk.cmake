@@ -31,7 +31,7 @@ message(STATUS "Using qaketool: ${QAKE_DIR}")
 # create_apk() uses androiddeployqt to create an android apk with Qt
 #
 #   The first argument is the name of the target for the application to package.
-#   A make target called `build_apk` will be generated but automatically built.
+#   A make target called `apk` will be generated but automatically built.
 #
 # options:
 #   NAME - name of the application, as shown on the android device
@@ -119,7 +119,7 @@ macro(create_apk SOURCE_TARGET)
         message(STATUS "Adding external dependencies: ${DEPENDS}")
     endif()
 
-    add_custom_target(build_apk ALL DEPENDS ${SOURCE_TARGET}
+    add_custom_target(apk DEPENDS ${SOURCE_TARGET}
         COMMAND ${CMAKE_COMMAND} -E remove_directory
                 ${CMAKE_CURRENT_BINARY_DIR}/libs/${ANDROID_ABI}
         COMMAND ${CMAKE_COMMAND} -E make_directory
@@ -130,5 +130,5 @@ macro(create_apk SOURCE_TARGET)
                 --input ${DEPLOY_INPUT} --android-platform android-${ANDROID_NATIVE_API_LEVEL}
                 --gradle
     )
-                               
+
 endmacro()
