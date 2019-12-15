@@ -36,7 +36,6 @@ message(STATUS "Using qaketool: ${QAKE_DIR}")
 # options:
 #   NAME - name of the application, as shown on the android device
 #   PACKAGE_NAME - name of the application package
-#   BUILDTOOLS_REVISION - revision of build tools in the Android SDK
 #   VERSION_CODE - version code used by Google Play when upgrading
 #   VERSION_NAME - displayed version of the application
 #   QML_PATH - path to qml files to parse for dependencies to include in apk
@@ -46,8 +45,7 @@ message(STATUS "Using qaketool: ${QAKE_DIR}")
 macro(create_apk SOURCE_TARGET)
 
     # parse the macro arguments
-    set(PARSE_VALUES NAME PACKAGE_NAME BUILDTOOLS_REVISION VERSION_CODE
-            VERSION_NAME QML_PATH MANIFEST)
+    set(PARSE_VALUES NAME PACKAGE_NAME VERSION_CODE VERSION_NAME QML_PATH MANIFEST)
     cmake_parse_arguments(ARG "" "${PARSE_VALUES}" "DEPENDENCIES" ${ARGN})
 
     # application name
@@ -74,11 +72,32 @@ macro(create_apk SOURCE_TARGET)
     # version name
     set(QAKE_VERSION_NAME ${ARG_VERSION_NAME})
 
-    # build tools revision
-    set(BUILDTOOLS_REVISION ${ARG_BUILDTOOLS_REVISION})
-
     # path to qml files
     set(QAKE_QML_PATH ${ARG_QML_PATH})
+
+    # detect sdk build tools revision
+    set(SDK_BUILDTOOLS_REVISION "0.0.0")
+    file(GLOB ALL_VERSIONS RELATIVE ${ANDROID_SDK_ROOT}/build-tools ${ANDROID_SDK_ROOT}/build-tools/*)
+    foreach(BUILD_TOOLS_VERSION ${ALL_VERSIONS})
+        if (${BUILD_TOOLS_VERSION} VERSION_GREATER ${SDK_BUILDTOOLS_REVISION})
+            set(SDK_BUILDTOOLS_REVISION ${BUILD_TOOLS_VERSION})
+        endif()
+    endforeach()
+
+    # set c++ stl version
+    if(ANDROID_STL STREQUAL c++_shared)
+        set(QAKE_STL_PATH "${ANDROID_NDK_ROOT}/sources/cxx-stl/llvm-libc++/libs/${ANDROID_ABI}/libc++_shared.so")
+    else()
+        set(QAKE_STL_PATH "${ANDROID_NDK_ROOT}/sources/cxx-stl/llvm-libc++/libs/${ANDROID_ABI}/libc++_static.so")
+    endif()
+
+    # show some info
+    message(STATUS "Using Android SDK build tools version: ${SDK_BUILDTOOLS_REVISION}")
+    message(STATUS "Using Android target SDK version: android-${ANDROID_NATIVE_API_LEVEL}")
+    message(STATUS "ANDROID_TOOLCHAIN_NAME=${ANDROID_TOOLCHAIN_NAME} (${ANDROID_TOOLCHAIN})")
+    message(STATUS "ANDROID_ABI=${ANDROID_ABI}")
+    message(STATUS "ANDROID_STL=${ANDROID_STL}")
+    message(STATUS "C++ STL library: ${QAKE_STL_PATH}")
 
     # library dependencies
     if(ARG_DEPENDENCIES)
@@ -92,7 +111,7 @@ macro(create_apk SOURCE_TARGET)
         set(QAKE_DEPENDENCIES ",\"android-extra-libs\": \"${DEPENDS}\"")
     endif()
 
-    if (ARG_MANIFEST)
+    if(ARG_MANIFEST)
         set(QAKE_MANIFEST ${ARG_MANIFEST})
     else()
         set(QAKE_MANIFEST ${QAKE_DIR}/AndroidManifest.xml.in)
@@ -119,6 +138,12 @@ macro(create_apk SOURCE_TARGET)
         message(STATUS "Adding external dependencies: ${DEPENDS}")
     endif()
 
+    if (DEFINED CMAKE_BUILD_TYPE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(QAKE_QT_BUILD_TYPE --debug)
+    else()
+        set(QAKE_QT_BUILD_TYPE --release)
+    endif()
+
     add_custom_target(apk DEPENDS ${SOURCE_TARGET}
         COMMAND ${CMAKE_COMMAND} -E remove_directory
                 ${CMAKE_CURRENT_BINARY_DIR}/libs/${ANDROID_ABI}
@@ -126,9 +151,13 @@ macro(create_apk SOURCE_TARGET)
                 ${CMAKE_CURRENT_BINARY_DIR}/libs/${ANDROID_ABI}
         COMMAND ${CMAKE_COMMAND} -E copy ${TARGET_PATH}
                 ${CMAKE_CURRENT_BINARY_DIR}/libs/${ANDROID_ABI}
-        COMMAND ${QT_PATH}/bin/androiddeployqt --verbose --output ${CMAKE_CURRENT_BINARY_DIR}
-                --input ${DEPLOY_INPUT} --android-platform android-${ANDROID_NATIVE_API_LEVEL}
+        COMMAND ${QT_PATH}/bin/androiddeployqt --verbose
+                --output ${CMAKE_CURRENT_BINARY_DIR}
+                --input ${DEPLOY_INPUT}
+                --android-platform android-${ANDROID_NATIVE_API_LEVEL}
+                ${QAKE_QT_BUILD_TYPE}
                 --gradle
+#                --qml-import-paths 
     )
 
 endmacro()

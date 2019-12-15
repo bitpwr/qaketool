@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest
-     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:versionCode="@QAKE_VERSION_CODE@"
-     android:versionName="@QAKE_VERSION_NAME@"
+    android:versionName="@QAKE_VERSION_NAME@"
     package="@QAKE_PACKAGE_NAME@"
     android:installLocation="auto">
 
@@ -73,7 +73,7 @@
     </application>
 
     <!-- Beware that these values are overridden by the build.gradle file -->
-    <uses-sdk android:minSdkVersion="18" android:targetSdkVersion="@ANDROID_NATIVE_API_LEVEL@"/>
+    <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="@ANDROID_NATIVE_API_LEVEL@"/>
 
     <supports-screens
         android:anyDensity="true"
@@ -81,8 +81,9 @@
         android:smallScreens="true"
         android:largeScreens="true"/>
 
+    <!-- %%INSERT_PERMISSIONS -->
     <uses-permission android:name="android.permission.INTERNET" />
-
+    <!-- %%INSERT_FEATURES -->
     <uses-feature android:glEsVersion="0x00020000" android:required="true" />
 
 </manifest>

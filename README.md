@@ -2,8 +2,8 @@
 
 _**Q**t**A**ndroidcma**KE**_ tool is a guide how to build CMake based Qt
 applications for Android on Linux systems. It uses the toolchain file in
-the Android NDK. The guide is tested to work with NDK version 16b,
-which by default uses the clang 5.0 compiler with gnu stl.
+the Android NDK. The guide is tested to work with Qt 5.13 and NDK version 20,
+which uses the clang 8.0 compiler with `c++_shared` stl.
 
 ## Prerequisites
 
@@ -14,10 +14,16 @@ Before you start, you need to install some required tools.
 * Download Android ndk
 * Qt with pre-built libraries for Android (armeabi)
 
+### Install Android sdk
+
+```sh
+sdk/tools/bin/sdkmanager "build-tools;28.0.3" "platform-tools" "platforms;android-23"
+```
+
 Ensure you accept the Android java sdk license.
 
 ```sh
-sdk/tools/bin/sdkmanager --license
+sdk/tools/bin/sdkmanager --licenses
 ```
 
 ## Creating an Android package (apk)
@@ -38,8 +44,9 @@ export QAKE_DIR=<path to qaketool>
 
 ### CMake setup
 
-The toolchain file from the NDK sets the `ANDROID` variable. Use this for Android specific
-settings, e.g. that the executable must be built as a shared library for the apk.
+The toolchain file from the NDK sets the `ANDROID` variable. Use this for
+Android specific settings, e.g. that the executable must be built as a
+shared library for the apk.
 
 ```cmake
 if (ANDROID)
@@ -51,14 +58,13 @@ endif()
 
 ### Configure the apk
 
-Include the `create_apk.cmake` file and use the `create_apk()` macro to define the apk build.
-This is a minimal example.
+Include the `create_apk.cmake` file and use the `create_apk()` macro to define
+the apk build. This is a minimal example.
 
 ```cmake
 if(ANDROID)
     include($ENV{QAKE_DIR}/create_apk.cmake)
     create_apk(${PROJECT_NAME}
-        BUILDTOOLS_REVISION "25.0.3"
         VERSION_NAME "1.1"
         )
 endif()
@@ -73,9 +79,6 @@ __NAME__ - The name of the application, as shown on the Android device. If not p
 the name of the source target will be used.
 
 __PACKAGE_NAME__ - The name of the application package. If not provided, `io.qt.${PROJECT_NAME}` is used.
-
-__BUILDTOOLS_REVISION__ - The revision of build tools in the Android SDK, as found
-in the <ANDROID_SDK>/build-tools directory.
 
 __VERSION_CODE__ - Version code used by Google Play. Must be incremented when new
 version is published. Set to 1 if omitted.
@@ -98,7 +101,6 @@ if(ANDROID)
     create_apk(${PROJECT_NAME}
         NAME "SuperApp"
         PACKAGE_NAME "com.domain.${PROJECT_NAME}
-        BUILDTOOLS_REVISION "25.0.3"
         VERSION_CODE 1
         VERSION_NAME "1.1"
         QML_PATH ${CMAKE_CURRENT_SOURCE_DIR}/qml
@@ -110,7 +112,7 @@ endif()
 ## Build the shared library
 
 To cross compile for Android, it is enough to point out the toolchain
-file and define the Android Api level. For Qt applications we must also
+file in the NDK and define the Android Api level. For Qt applications we must also
 set `CMAKE_PREFIX_PATH` to indicate to CMake where to find the pre-built
 Qt libraries. Since the toolchain file appends the sysroot to all find paths,
 we must also set `CMAKE_FIND_ROOT_PATH_MODE_PACKAGE` to find the Qt modules.
@@ -128,12 +130,12 @@ Now run `CMake`.
 ```sh
 mkdir build
 cd build
-cmake -DCMAKE_TOOLCHAIN_FILE=<path>/android-ndk-r16b/build/cmake/android.toolchain.cmake -DCMAKE_PREFIX_PATH=<path>/qt/5.9/android_armv7/lib/cmake -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ON -DANDROID_STL=c++_static -DANDROID_NATIVE_API_LEVEL=android-19 ..
+cmake -DCMAKE_TOOLCHAIN_FILE=<path>/android-ndk-r20/build/cmake/android.toolchain.cmake -DCMAKE_PREFIX_PATH=<path>/qt/5.13.1/android_armv7/lib/cmake -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ON -DANDROID_NATIVE_API_LEVEL=android-23 -DANDROID_STL=c++_shared..
 ```
 
-This will setup a Makefile for armeabi-v7a using clang as compiler and static libc++ STL.
-These can be changed by also providing `ANDROID_ABI`, `ANDROID_TOOLCHAIN` and
-`ANDROID_STL` if required.
+This will setup a Makefile for armeabi-v7a using clang as compiler and a shared
+libc++ STL.
+These can be changed with `ANDROID_ABI` and `ANDROID_STL`.
 
 Then build the library for Android.
 
@@ -157,7 +159,7 @@ To install the apk on a connected Android phone, just use `adb` from the Android
 <path>/sdk/platform-tools/adb install -r <buildFolder>/build/outputs/apk/<name>.apk
 ```
 
-## Cross compile and include other libraries
+## Cross compile and include other libraries - OBSOLETE
 
 It is possible to compile third party library as described above but sometimes
 it is better to use the NDK to generate a dedicated
